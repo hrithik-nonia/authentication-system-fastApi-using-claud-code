@@ -1,11 +1,8 @@
-from app.schemas.user_schema import UserCreate
+from app.security.password_handler import hash_password, verify_password
 
-# Valid data
-user = UserCreate(name="Hrithik", email="hrithik@gmail.com", password="Test@1234")
-print(user)
+plain = "Test@1234"
+hashed = hash_password(plain)
 
-# Invalid email test
-try:
-    bad_user = UserCreate(name="Test", email="abc@gmail.com", password="Test@1234")
-except Exception as e:
-    print("Validation Error:", e)
+print("Hashed:", hashed)
+print("Verify correct password:", verify_password("Test@1234", hashed))  # True
+print("Verify wrong password:", verify_password("Wrong@123", hashed))    # False

@@ -1,0 +1,43 @@
+from app.repositories.user_repositorie import user_repository
+from app.models.user_model import UserModel
+from app.schemas.user_schema import UserCreate, UserResponse
+from app.security.password_handler import hash_password
+from app.exceptions.custom_exception import UserAlreadyExistsException
+
+
+class AuthService:
+    def __init__(self):
+        self.user_repository = user_repository
+
+    async def signup(self, user_data: UserCreate) -> UserResponse:
+        # Step 1: Check karo email already exist toh nahi karta
+        existing_user = await self.user_repository.find_by_email(user_data.email)
+        if existing_user:
+            raise UserAlreadyExistsException(user_data.email)
+
+        # Step 2: Password hash karo
+        hashed_pw = hash_password(user_data.password)
+
+        # Step 3: UserModel banao (DB-ready format)
+        new_user = UserModel(
+            name=user_data.name,
+            email=user_data.email,
+            hashed_password=hashed_pw,
+        )
+
+        # Step 4: Repository ko bolo save karne ke liye
+        created_user = await self.user_repository.create(new_user)
+
+        # Step 5: Response schema mein convert karke return karo
+        return UserResponse(
+            id=str(created_user["_id"]),
+            name=created_user["name"],
+            email=created_user["email"],
+            role=created_user["role"],
+            is_active=created_user["is_active"],
+            is_verified=created_user["is_verified"],
+            created_at=created_user["created_at"],
+        )
+
+
+auth_service = AuthService()
