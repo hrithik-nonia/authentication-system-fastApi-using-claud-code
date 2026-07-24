@@ -2,6 +2,8 @@ from fastapi import APIRouter, status, Depends
 from app.schemas.user_schema import UserCreate, UserResponse , UserLogin
 from app.services.auth_service import auth_service
 from app.dependencies.auth_dependency import get_current_user
+from app.dependencies.role_dependency import require_role
+from app.constants.roles import Role
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -30,3 +32,15 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         is_verified=current_user["is_verified"],
         created_at=current_user["created_at"],
     )
+
+
+# role based route
+@router.get("/admin/dashboard")
+async def admin_dashboard(current_user: dict = Depends(require_role(Role.ADMIN))):
+    return {"message": f"Welcome Admin {current_user['name']}"}
+
+
+@router.get("/products")
+async def get_products(current_user: dict = Depends(get_current_user)):
+    # Koi bhi authenticated user (user ya admin) access kar sakta hai
+    return {"products": []}
